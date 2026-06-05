@@ -46,7 +46,7 @@ const s = StyleSheet.create({
     paddingTop: 72,
     paddingBottom: 72,
     paddingHorizontal: 64,
-    fontFamily: "Inter",
+    fontFamily: "Helvetica",
     fontSize: 11,
     lineHeight: 1.6,
   },
