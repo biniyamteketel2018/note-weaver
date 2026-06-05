@@ -59,7 +59,7 @@ const s = StyleSheet.create({
   coverImage: { width: "100%", height: 360, objectFit: "cover" },
   coverBody: { padding: 64, flexGrow: 1, justifyContent: "space-between" },
   coverEyebrow: {
-    fontFamily: "Inter",
+    fontFamily: "Helvetica",
     fontSize: 9,
     letterSpacing: 3,
     textTransform: "uppercase",
@@ -67,14 +67,14 @@ const s = StyleSheet.create({
     marginBottom: 24,
   },
   coverTitle: {
-    fontFamily: "Cormorant",
+    fontFamily: "Times",
     fontWeight: 700,
     fontSize: 56,
     lineHeight: 1.05,
     marginBottom: 18,
   },
   coverSubtitle: {
-    fontFamily: "Cormorant",
+    fontFamily: "Times",
     fontStyle: "italic",
     fontSize: 20,
     color: MUTED,
@@ -101,11 +101,11 @@ const s = StyleSheet.create({
     color: GOLD,
     marginBottom: 6,
   },
-  h1: { fontFamily: "Cormorant", fontWeight: 700, fontSize: 32, lineHeight: 1.1, marginBottom: 12 },
-  h2: { fontFamily: "Cormorant", fontWeight: 700, fontSize: 22, lineHeight: 1.2, marginTop: 24, marginBottom: 10 },
-  h3: { fontFamily: "Cormorant", fontWeight: 600, fontSize: 14, marginTop: 12, marginBottom: 6, color: INK },
+  h1: { fontFamily: "Times", fontWeight: 700, fontSize: 32, lineHeight: 1.1, marginBottom: 12 },
+  h2: { fontFamily: "Times", fontWeight: 700, fontSize: 22, lineHeight: 1.2, marginTop: 24, marginBottom: 10 },
+  h3: { fontFamily: "Times", fontWeight: 600, fontSize: 14, marginTop: 12, marginBottom: 6, color: INK },
   intro: {
-    fontFamily: "Cormorant",
+    fontFamily: "Times",
     fontStyle: "italic",
     fontSize: 14,
     color: MUTED,
@@ -132,7 +132,7 @@ const s = StyleSheet.create({
     marginBottom: 4,
     fontWeight: 700,
   },
-  calloutTitle: { fontFamily: "Cormorant", fontWeight: 600, fontSize: 13, marginBottom: 4 },
+  calloutTitle: { fontFamily: "Times", fontWeight: 600, fontSize: 13, marginBottom: 4 },
   calloutBody: { fontSize: 10.5, lineHeight: 1.55 },
 
   quoteCard: {
@@ -142,14 +142,14 @@ const s = StyleSheet.create({
     backgroundColor: INK,
     color: PAPER,
   },
-  quoteMark: { fontFamily: "Cormorant", fontSize: 36, color: GOLD, marginBottom: -6 },
-  quoteText: { fontFamily: "Cormorant", fontStyle: "italic", fontSize: 16, lineHeight: 1.4, color: PAPER },
+  quoteMark: { fontFamily: "Times", fontSize: 36, color: GOLD, marginBottom: -6 },
+  quoteText: { fontFamily: "Times", fontStyle: "italic", fontSize: 16, lineHeight: 1.4, color: PAPER },
 
   // Timeline
   timelineWrap: { marginVertical: 14, paddingLeft: 12, borderLeftWidth: 1, borderLeftColor: GOLD },
   timelineItem: { marginBottom: 10 },
   timelineDate: { fontSize: 9, letterSpacing: 1.5, textTransform: "uppercase", color: GOLD, marginBottom: 2 },
-  timelineTitle: { fontFamily: "Cormorant", fontWeight: 600, fontSize: 13, marginBottom: 2 },
+  timelineTitle: { fontFamily: "Times", fontWeight: 600, fontSize: 13, marginBottom: 2 },
   timelineDesc: { fontSize: 10, color: MUTED, lineHeight: 1.5 },
 
   // Table
@@ -219,7 +219,7 @@ const s = StyleSheet.create({
     borderBottomColor: RULE,
   },
   tocNum: { color: GOLD, fontWeight: 700, marginRight: 10, fontSize: 11 },
-  tocTitle: { fontFamily: "Cormorant", fontSize: 14, flex: 1 },
+  tocTitle: { fontFamily: "Times", fontSize: 14, flex: 1 },
 
   refItem: { fontSize: 9.5, color: MUTED, marginBottom: 4 },
 });
