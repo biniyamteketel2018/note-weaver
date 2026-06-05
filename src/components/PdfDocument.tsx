@@ -10,25 +10,26 @@ import {
 } from "@react-pdf/renderer";
 import type { StructuredDocument } from "@/lib/analyze.functions";
 
-// Register editorial-quality fonts (Google Fonts CDN, accessible from worker fetch via @react-pdf).
+// Use standard PDF fonts — embedded natively, no external fetching required.
 Font.register({
-  family: "Cormorant",
+  family: "Times",
   fonts: [
-    { src: "https://fonts.gstatic.com/s/cormorantgaramond/v16/co3bmX5slCNuHLi8bLeY9MK7whWMhyjQAllvuQWJ5heb_w.ttf", fontWeight: 400 },
-    { src: "https://fonts.gstatic.com/s/cormorantgaramond/v16/co3YmX5slCNuHLi8bLeY9MK7whWMhyjYrEPjuw.ttf", fontWeight: 400, fontStyle: "italic" },
-    { src: "https://fonts.gstatic.com/s/cormorantgaramond/v16/co3bmX5slCNuHLi8bLeY9MK7whWMhyjQHV3uuQWJ5heb_w.ttf", fontWeight: 600 },
-    { src: "https://fonts.gstatic.com/s/cormorantgaramond/v16/co3bmX5slCNuHLi8bLeY9MK7whWMhyjQDFvuuQWJ5heb_w.ttf", fontWeight: 700 },
+    { src: "Times-Roman" },
+    { src: "Times-Italic", fontStyle: "italic" },
+    { src: "Times-Bold", fontWeight: 700 },
+    { src: "Times-BoldItalic", fontWeight: 700, fontStyle: "italic" },
   ],
 });
 Font.register({
-  family: "Inter",
+  family: "Helvetica",
   fonts: [
-    { src: "https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.ttf", fontWeight: 400 },
-    { src: "https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.ttf", fontWeight: 500 },
-    { src: "https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.ttf", fontWeight: 600 },
-    { src: "https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.ttf", fontWeight: 700 },
+    { src: "Helvetica" },
+    { src: "Helvetica-Oblique", fontStyle: "italic" },
+    { src: "Helvetica-Bold", fontWeight: 700 },
+    { src: "Helvetica-BoldOblique", fontWeight: 700, fontStyle: "italic" },
   ],
 });
+
 
 const INK = "#1a2030";
 const PAPER = "#fafaf6";
