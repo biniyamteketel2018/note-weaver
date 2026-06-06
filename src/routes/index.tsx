@@ -65,12 +65,8 @@ function Index() {
     try {
       const result = await analyze({ data: { notes } });
       setDoc(result);
-      setStatus("illustrating");
-      // Fire cover image in parallel — non-blocking; ignore failure
-      makeCover({ data: { prompt: result.heroPrompt } })
-        .then((r) => setCoverImage(r.dataUrl))
-        .catch(() => toast.message("Cover image unavailable", { description: "Document generated without hero image." }))
-        .finally(() => setStatus("idle"));
+      setCoverImage(result.coverImage ?? null);
+      setStatus("idle");
       toast.success("Document ready");
       requestAnimationFrame(() => previewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
     } catch (e) {
@@ -78,7 +74,7 @@ function Index() {
       const msg = e instanceof Error ? e.message : "Failed to analyze notes";
       toast.error(msg);
     }
-  }, [notes, analyze, makeCover]);
+  }, [notes, analyze]);
 
   const downloadPdf = useCallback(async () => {
     if (!doc) {
