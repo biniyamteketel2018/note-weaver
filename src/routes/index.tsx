@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { DocumentPreview } from "@/components/DocumentPreview";
 import { PdfDocument } from "@/components/PdfDocument";
 import { analyzeNotes, type StructuredDocument } from "@/lib/analyze.functions";
-import { generateCoverImage } from "@/lib/cover-image.functions";
+
 import { FileText, Sparkles, Download, Upload, Loader2, FileDown } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -40,7 +40,6 @@ formed, Cold War began, decolonization accelerated, ~70-85 million dead.`;
 
 function Index() {
   const analyze = useServerFn(analyzeNotes);
-  const makeCover = useServerFn(generateCoverImage);
 
   const [notes, setNotes] = useState("");
   const [doc, setDoc] = useState<StructuredDocument | null>(null);
@@ -66,12 +65,8 @@ function Index() {
     try {
       const result = await analyze({ data: { notes } });
       setDoc(result);
-      setStatus("illustrating");
-      // Fire cover image in parallel — non-blocking; ignore failure
-      makeCover({ data: { prompt: result.heroPrompt } })
-        .then((r) => setCoverImage(r.dataUrl))
-        .catch(() => toast.message("Cover image unavailable", { description: "Document generated without hero image." }))
-        .finally(() => setStatus("idle"));
+      setCoverImage(result.coverImage ?? null);
+      setStatus("idle");
       toast.success("Document ready");
       requestAnimationFrame(() => previewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
     } catch (e) {
@@ -79,7 +74,7 @@ function Index() {
       const msg = e instanceof Error ? e.message : "Failed to analyze notes";
       toast.error(msg);
     }
-  }, [notes, analyze, makeCover]);
+  }, [notes, analyze]);
 
   const downloadPdf = useCallback(async () => {
     if (!doc) {
@@ -145,7 +140,7 @@ function Index() {
             <Textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Paste your notes here — any topic, any length. The messier the better."
+              placeholder={`Paste your notes here — any topic, any length.\n\nAdd images by pasting URLs:\n(cover: https://example.com/hero.jpg)\n(image: https://example.com/figure.jpg)\n![caption](https://example.com/photo.jpg)\nor any direct image URL on its own line.`}
               className="min-h-72 resize-y border-rule bg-card font-serif text-base leading-relaxed shadow-sm"
               disabled={busy}
             />
