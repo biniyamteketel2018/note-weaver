@@ -71,6 +71,7 @@ export function DocumentPreview({
             <h2 className="mt-2 font-display text-3xl font-bold sm:text-4xl">{sec.heading}</h2>
             {sec.intro ? <p className="mt-3 font-serif text-lg italic text-muted-foreground">{sec.intro}</p> : null}
             <hr className="my-6 border-rule" />
+            {sec.image ? <img src={sec.image} alt="" className="mb-6 h-64 w-full rounded-sm object-cover sm:h-80" /> : null}
 
             <div className="space-y-4 text-justify leading-relaxed">
               {sec.paragraphs.map((p, j) => (

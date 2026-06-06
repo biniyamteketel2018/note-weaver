@@ -310,6 +310,7 @@ export function PdfDocument({
           <Text style={s.h1}>{sec.heading}</Text>
           {sec.intro ? <Text style={s.intro}>{sec.intro}</Text> : null}
           <View style={s.rule} />
+          {sec.image ? <Image src={sec.image} style={{ width: "100%", height: 220, objectFit: "cover", marginBottom: 14 }} /> : null}
 
           {sec.paragraphs.map((p, j) => (
             <Text key={j} style={s.p}>{p}</Text>
