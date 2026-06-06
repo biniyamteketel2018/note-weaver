@@ -44,7 +44,7 @@ function Index() {
   const [notes, setNotes] = useState("");
   const [doc, setDoc] = useState<StructuredDocument | null>(null);
   const [coverImage, setCoverImage] = useState<string | null>(null);
-  const [status, setStatus] = useState<"idle" | "analyzing" | "illustrating" | "exporting">("idle");
+  const [status, setStatus] = useState<"idle" | "analyzing" | "exporting">("idle");
   const fileInput = useRef<HTMLInputElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
 
@@ -169,9 +169,7 @@ function Index() {
           <div className="flex flex-col gap-3 lg:w-64">
             <Button size="lg" onClick={generate} disabled={busy} className="h-14 bg-ink text-paper hover:bg-ink/90">
               {status === "analyzing" ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Analyzing…</>
-              ) : status === "illustrating" ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Illustrating…</>
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Formatting…</>
               ) : (
                 <><Sparkles className="mr-2 h-4 w-4" /> Generate Document</>
               )}
