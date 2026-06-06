@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { DocumentPreview } from "@/components/DocumentPreview";
 import { PdfDocument } from "@/components/PdfDocument";
 import { analyzeNotes, type StructuredDocument } from "@/lib/analyze.functions";
-import { generateCoverImage } from "@/lib/cover-image.functions";
+
 import { FileText, Sparkles, Download, Upload, Loader2, FileDown } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -40,7 +40,6 @@ formed, Cold War began, decolonization accelerated, ~70-85 million dead.`;
 
 function Index() {
   const analyze = useServerFn(analyzeNotes);
-  const makeCover = useServerFn(generateCoverImage);
 
   const [notes, setNotes] = useState("");
   const [doc, setDoc] = useState<StructuredDocument | null>(null);
