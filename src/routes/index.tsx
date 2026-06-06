@@ -140,7 +140,7 @@ function Index() {
             <Textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Paste your notes here — any topic, any length. The messier the better."
+              placeholder={`Paste your notes here — any topic, any length.\n\nAdd images by pasting URLs:\n(cover: https://example.com/hero.jpg)\n(image: https://example.com/figure.jpg)\n![caption](https://example.com/photo.jpg)\nor any direct image URL on its own line.`}
               className="min-h-72 resize-y border-rule bg-card font-serif text-base leading-relaxed shadow-sm"
               disabled={busy}
             />
