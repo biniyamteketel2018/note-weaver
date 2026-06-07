@@ -45,6 +45,7 @@ function Index() {
   const [notes, setNotes] = useState("");
   const [doc, setDoc] = useState<StructuredDocument | null>(null);
   const [coverImage, setCoverImage] = useState<string | null>(null);
+  const [palette, setPalette] = useState<Palette>(DEFAULT_PALETTE);
   const [status, setStatus] = useState<"idle" | "analyzing" | "exporting">("idle");
   const fileInput = useRef<HTMLInputElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
