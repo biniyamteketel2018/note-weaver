@@ -85,7 +85,7 @@ function Index() {
     }
     setStatus("exporting");
     try {
-      const blob = await pdf(<PdfDocument doc={doc} coverImage={coverImage} />).toBlob();
+      const blob = await pdf(<PdfDocument doc={doc} coverImage={coverImage} palette={palette} />).toBlob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
