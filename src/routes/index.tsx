@@ -9,8 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { DocumentPreview } from "@/components/DocumentPreview";
 import { PdfDocument } from "@/components/PdfDocument";
 import { analyzeNotes, type StructuredDocument } from "@/lib/analyze.functions";
+import { PALETTES, DEFAULT_PALETTE, type Palette } from "@/lib/palettes";
 
-import { FileText, Sparkles, Download, Upload, Loader2, FileDown } from "lucide-react";
+import { FileText, Sparkles, Download, Upload, Loader2, FileDown, Check } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -44,6 +45,7 @@ function Index() {
   const [notes, setNotes] = useState("");
   const [doc, setDoc] = useState<StructuredDocument | null>(null);
   const [coverImage, setCoverImage] = useState<string | null>(null);
+  const [palette, setPalette] = useState<Palette>(DEFAULT_PALETTE);
   const [status, setStatus] = useState<"idle" | "analyzing" | "exporting">("idle");
   const fileInput = useRef<HTMLInputElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
@@ -83,7 +85,7 @@ function Index() {
     }
     setStatus("exporting");
     try {
-      const blob = await pdf(<PdfDocument doc={doc} coverImage={coverImage} />).toBlob();
+      const blob = await pdf(<PdfDocument doc={doc} coverImage={coverImage} palette={palette} />).toBlob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -96,7 +98,7 @@ function Index() {
     } finally {
       setStatus("idle");
     }
-  }, [doc, coverImage]);
+  }, [doc, coverImage, palette]);
 
   const busy = status !== "idle";
 
@@ -227,6 +229,47 @@ function Index() {
                 )}
               </Button>
             </div>
+
+            {/* Palette picker */}
+            <div className="mb-8 rounded-sm border border-rule bg-card p-5">
+              <div className="flex items-baseline justify-between">
+                <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--gold)]">
+                  PDF Color Palette
+                </p>
+                <p className="text-xs text-muted-foreground">Applied to the exported PDF</p>
+              </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                {PALETTES.map((p) => {
+                  const selected = p.id === palette.id;
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => setPalette(p)}
+                      className={`group relative flex flex-col items-stretch overflow-hidden rounded-sm border-2 text-left transition ${
+                        selected ? "border-ink shadow-md" : "border-rule hover:border-ink/60"
+                      }`}
+                      style={{ backgroundColor: p.paper }}
+                    >
+                      <div className="flex h-10">
+                        <div className="flex-1" style={{ backgroundColor: p.ink }} />
+                        <div className="flex-1" style={{ backgroundColor: p.accent }} />
+                        <div className="flex-1" style={{ backgroundColor: p.soft }} />
+                        <div className="flex-1" style={{ backgroundColor: p.sage }} />
+                      </div>
+                      <div className="flex items-center justify-between px-3 py-2">
+                        <span className="text-xs font-semibold" style={{ color: p.ink }}>
+                          {p.name}
+                        </span>
+                        {selected ? (
+                          <Check className="h-3.5 w-3.5" style={{ color: p.accent }} />
+                        ) : null}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
             <DocumentPreview doc={doc} coverImage={coverImage} />
           </div>
         </section>
@@ -235,7 +278,7 @@ function Index() {
       <footer className="border-t border-rule">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-8 text-xs uppercase tracking-[0.2em] text-muted-foreground">
           <span>© {new Date().getFullYear()} Notable</span>
-          <span>Crafted with editorial AI</span>
+          <span>By Biniyam Teketel</span>
         </div>
       </footer>
     </div>
