@@ -30,7 +30,7 @@ Font.register({
   ],
 });
 
-const BYLINE = "By Biniyam Teketel";
+
 
 function pickPullQuote(sec: {
   paragraphs: string[];
@@ -282,7 +282,7 @@ export function PdfDocument({
     <>
       <View style={s.header} fixed>
         <Text>{title}</Text>
-        <Text>{BYLINE}</Text>
+        <Text>{doc.category}</Text>
       </View>
       <View style={s.footer} fixed>
         <Text>{new Date().toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })}</Text>
@@ -292,7 +292,7 @@ export function PdfDocument({
   );
 
   return (
-    <Document title={doc.title} author="Biniyam Teketel" subject={doc.subtitle}>
+    <Document title={doc.title} subject={doc.subtitle}>
       {/* Cover */}
       <Page size="A4" style={s.coverPage}>
         {coverImage ? <Image src={coverImage} style={s.coverImage} /> : <View style={{ height: 200, backgroundColor: ink }} />}
@@ -304,7 +304,7 @@ export function PdfDocument({
           </View>
           <View style={s.coverFooter}>
             <Text>{new Date().toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })}</Text>
-            <Text>{BYLINE}</Text>
+            <Text>{doc.category}</Text>
           </View>
         </View>
       </Page>
@@ -431,7 +431,7 @@ export function PdfDocument({
                 <Text style={s.quoteBigMark}>“</Text>
                 <Text style={s.quoteBigText}>{q.body}</Text>
                 <View style={s.quoteBigRule} />
-                <Text style={s.quoteBigAttr}>{q.title || BYLINE}</Text>
+                {q.title ? <Text style={s.quoteBigAttr}>{q.title}</Text> : null}
               </Page>
             ))}
           </View>

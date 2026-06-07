@@ -1,6 +1,6 @@
 import type { StructuredDocument } from "@/lib/analyze.functions";
 
-const BYLINE = "By Biniyam Teketel";
+
 
 function pickPullQuote(sec: {
   paragraphs: string[];
@@ -49,7 +49,7 @@ export function DocumentPreview({
           <p className="mt-4 max-w-prose font-serif text-lg italic text-muted-foreground sm:text-2xl">{doc.subtitle}</p>
           <div className="mt-10 flex justify-between border-t border-rule pt-4 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
             <span>{new Date().toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })}</span>
-            <span>{BYLINE}</span>
+            <span>{doc.category}</span>
           </div>
         </div>
       </header>
@@ -149,7 +149,7 @@ export function DocumentPreview({
                   </p>
                   <div className="mt-8 h-px w-16 bg-[var(--gold)]" />
                   <p className="mt-3 text-[10px] uppercase tracking-[0.3em] text-[var(--gold)]">
-                    {q.title || BYLINE}
+                    {q.title || ""}
                   </p>
                 </blockquote>
               ))}
