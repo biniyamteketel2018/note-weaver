@@ -30,7 +30,7 @@ Font.register({
   ],
 });
 
-const BYLINE = "By Biniyam Teketel";
+
 
 function pickPullQuote(sec: {
   paragraphs: string[];
