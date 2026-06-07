@@ -9,9 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { DocumentPreview } from "@/components/DocumentPreview";
 import { PdfDocument } from "@/components/PdfDocument";
 import { analyzeNotes, type StructuredDocument } from "@/lib/analyze.functions";
-import { PALETTES, DEFAULT_PALETTE, type Palette } from "@/lib/palettes";
-
-import { FileText, Sparkles, Download, Upload, Loader2, FileDown, Check } from "lucide-react";
+import { generateCoverImage } from "@/lib/cover-image.functions";
+import { FileText, Sparkles, Download, Upload, Loader2, FileDown } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -41,12 +40,12 @@ formed, Cold War began, decolonization accelerated, ~70-85 million dead.`;
 
 function Index() {
   const analyze = useServerFn(analyzeNotes);
+  const makeCover = useServerFn(generateCoverImage);
 
   const [notes, setNotes] = useState("");
   const [doc, setDoc] = useState<StructuredDocument | null>(null);
   const [coverImage, setCoverImage] = useState<string | null>(null);
-  const [palette, setPalette] = useState<Palette>(DEFAULT_PALETTE);
-  const [status, setStatus] = useState<"idle" | "analyzing" | "exporting">("idle");
+  const [status, setStatus] = useState<"idle" | "analyzing" | "illustrating" | "exporting">("idle");
   const fileInput = useRef<HTMLInputElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
 
@@ -67,8 +66,12 @@ function Index() {
     try {
       const result = await analyze({ data: { notes } });
       setDoc(result);
-      setCoverImage(result.coverImage ?? null);
-      setStatus("idle");
+      setStatus("illustrating");
+      // Fire cover image in parallel — non-blocking; ignore failure
+      makeCover({ data: { prompt: result.heroPrompt } })
+        .then((r) => setCoverImage(r.dataUrl))
+        .catch(() => toast.message("Cover image unavailable", { description: "Document generated without hero image." }))
+        .finally(() => setStatus("idle"));
       toast.success("Document ready");
       requestAnimationFrame(() => previewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
     } catch (e) {
@@ -76,7 +79,7 @@ function Index() {
       const msg = e instanceof Error ? e.message : "Failed to analyze notes";
       toast.error(msg);
     }
-  }, [notes, analyze]);
+  }, [notes, analyze, makeCover]);
 
   const downloadPdf = useCallback(async () => {
     if (!doc) {
@@ -85,7 +88,7 @@ function Index() {
     }
     setStatus("exporting");
     try {
-      const blob = await pdf(<PdfDocument doc={doc} coverImage={coverImage} palette={palette} />).toBlob();
+      const blob = await pdf(<PdfDocument doc={doc} coverImage={coverImage} />).toBlob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -98,7 +101,7 @@ function Index() {
     } finally {
       setStatus("idle");
     }
-  }, [doc, coverImage, palette]);
+  }, [doc, coverImage]);
 
   const busy = status !== "idle";
 
@@ -142,7 +145,7 @@ function Index() {
             <Textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder={`Paste your notes here — any topic, any length.\n\nAdd images by pasting URLs:\n(cover: https://example.com/hero.jpg)\n(image: https://example.com/figure.jpg)\n![caption](https://example.com/photo.jpg)\nor any direct image URL on its own line.`}
+              placeholder="Paste your notes here — any topic, any length. The messier the better."
               className="min-h-72 resize-y border-rule bg-card font-serif text-base leading-relaxed shadow-sm"
               disabled={busy}
             />
@@ -171,7 +174,9 @@ function Index() {
           <div className="flex flex-col gap-3 lg:w-64">
             <Button size="lg" onClick={generate} disabled={busy} className="h-14 bg-ink text-paper hover:bg-ink/90">
               {status === "analyzing" ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Formatting…</>
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Analyzing…</>
+              ) : status === "illustrating" ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Illustrating…</>
               ) : (
                 <><Sparkles className="mr-2 h-4 w-4" /> Generate Document</>
               )}
@@ -229,47 +234,6 @@ function Index() {
                 )}
               </Button>
             </div>
-
-            {/* Palette picker */}
-            <div className="mb-8 rounded-sm border border-rule bg-card p-5">
-              <div className="flex items-baseline justify-between">
-                <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--gold)]">
-                  PDF Color Palette
-                </p>
-                <p className="text-xs text-muted-foreground">Applied to the exported PDF</p>
-              </div>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                {PALETTES.map((p) => {
-                  const selected = p.id === palette.id;
-                  return (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => setPalette(p)}
-                      className={`group relative flex flex-col items-stretch overflow-hidden rounded-sm border-2 text-left transition ${
-                        selected ? "border-ink shadow-md" : "border-rule hover:border-ink/60"
-                      }`}
-                      style={{ backgroundColor: p.paper }}
-                    >
-                      <div className="flex h-10">
-                        <div className="flex-1" style={{ backgroundColor: p.ink }} />
-                        <div className="flex-1" style={{ backgroundColor: p.accent }} />
-                        <div className="flex-1" style={{ backgroundColor: p.soft }} />
-                        <div className="flex-1" style={{ backgroundColor: p.sage }} />
-                      </div>
-                      <div className="flex items-center justify-between px-3 py-2">
-                        <span className="text-xs font-semibold" style={{ color: p.ink }}>
-                          {p.name}
-                        </span>
-                        {selected ? (
-                          <Check className="h-3.5 w-3.5" style={{ color: p.accent }} />
-                        ) : null}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
             <DocumentPreview doc={doc} coverImage={coverImage} />
           </div>
         </section>
@@ -278,7 +242,7 @@ function Index() {
       <footer className="border-t border-rule">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-8 text-xs uppercase tracking-[0.2em] text-muted-foreground">
           <span>© {new Date().getFullYear()} Notable</span>
-          <span>Editorial PDF Generator</span>
+          <span>Crafted with editorial AI</span>
         </div>
       </footer>
     </div>
