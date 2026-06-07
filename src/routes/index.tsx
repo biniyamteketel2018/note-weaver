@@ -9,8 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { DocumentPreview } from "@/components/DocumentPreview";
 import { PdfDocument } from "@/components/PdfDocument";
 import { analyzeNotes, type StructuredDocument } from "@/lib/analyze.functions";
+import { PALETTES, DEFAULT_PALETTE, type Palette } from "@/lib/palettes";
 
-import { FileText, Sparkles, Download, Upload, Loader2, FileDown } from "lucide-react";
+import { FileText, Sparkles, Download, Upload, Loader2, FileDown, Check } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
