@@ -278,7 +278,7 @@ function Index() {
       <footer className="border-t border-rule">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-8 text-xs uppercase tracking-[0.2em] text-muted-foreground">
           <span>© {new Date().getFullYear()} Notable</span>
-          <span>By Biniyam Teketel</span>
+          <span>Editorial PDF Generator</span>
         </div>
       </footer>
     </div>
