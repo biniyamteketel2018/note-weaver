@@ -229,6 +229,47 @@ function Index() {
                 )}
               </Button>
             </div>
+
+            {/* Palette picker */}
+            <div className="mb-8 rounded-sm border border-rule bg-card p-5">
+              <div className="flex items-baseline justify-between">
+                <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--gold)]">
+                  PDF Color Palette
+                </p>
+                <p className="text-xs text-muted-foreground">Applied to the exported PDF</p>
+              </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                {PALETTES.map((p) => {
+                  const selected = p.id === palette.id;
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => setPalette(p)}
+                      className={`group relative flex flex-col items-stretch overflow-hidden rounded-sm border-2 text-left transition ${
+                        selected ? "border-ink shadow-md" : "border-rule hover:border-ink/60"
+                      }`}
+                      style={{ backgroundColor: p.paper }}
+                    >
+                      <div className="flex h-10">
+                        <div className="flex-1" style={{ backgroundColor: p.ink }} />
+                        <div className="flex-1" style={{ backgroundColor: p.accent }} />
+                        <div className="flex-1" style={{ backgroundColor: p.soft }} />
+                        <div className="flex-1" style={{ backgroundColor: p.sage }} />
+                      </div>
+                      <div className="flex items-center justify-between px-3 py-2">
+                        <span className="text-xs font-semibold" style={{ color: p.ink }}>
+                          {p.name}
+                        </span>
+                        {selected ? (
+                          <Check className="h-3.5 w-3.5" style={{ color: p.accent }} />
+                        ) : null}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
             <DocumentPreview doc={doc} coverImage={coverImage} />
           </div>
         </section>
