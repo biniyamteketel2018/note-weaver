@@ -98,7 +98,7 @@ function Index() {
     } finally {
       setStatus("idle");
     }
-  }, [doc, coverImage]);
+  }, [doc, coverImage, palette]);
 
   const busy = status !== "idle";
 
