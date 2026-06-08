@@ -1,7 +1,5 @@
 import type { StructuredDocument } from "@/lib/analyze.functions";
 
-
-
 function pickPullQuote(sec: {
   paragraphs: string[];
   callouts?: { type: string; body: string }[];
@@ -28,16 +26,24 @@ const calloutClasses: Record<string, { wrap: string; label: string; name: string
 export function DocumentPreview({
   doc,
   coverImage,
+  forExport = false,
 }: {
   doc: StructuredDocument;
   coverImage?: string | null;
+  forExport?: boolean;
 }) {
   return (
-    <article className="mx-auto max-w-3xl bg-card text-card-foreground shadow-2xl">
+    <article
+      className={
+        forExport
+          ? "mx-auto w-full bg-card text-card-foreground"
+          : "mx-auto max-w-3xl bg-card text-card-foreground shadow-2xl"
+      }
+    >
       {/* Cover */}
-      <header className="relative">
+      <header className="relative" data-pdf-keep>
         {coverImage ? (
-          <img src={coverImage} alt="" className="h-72 w-full object-cover sm:h-96" />
+          <img src={coverImage} alt="" className="h-72 w-full object-cover sm:h-96" crossOrigin="anonymous" />
         ) : (
           <div className="h-48 w-full bg-gradient-to-br from-ink to-[var(--gold)]" />
         )}
@@ -56,7 +62,7 @@ export function DocumentPreview({
 
       <div className="px-8 pb-14 sm:px-14">
         {/* Executive Summary */}
-        <section className="py-10">
+        <section className="py-10" data-pdf-break="before" data-pdf-keep>
           <p className="text-[10px] uppercase tracking-[0.25em] text-[var(--gold)]">Executive Summary</p>
           <h2 className="mt-2 font-display text-3xl font-bold">In Brief</h2>
           <p className="mt-4 font-serif text-lg italic leading-relaxed text-muted-foreground">{doc.executiveSummary}</p>
@@ -65,7 +71,7 @@ export function DocumentPreview({
         <hr className="border-rule" />
 
         {/* TOC */}
-        <section className="py-10">
+        <section className="py-10" data-pdf-keep>
           <p className="text-[10px] uppercase tracking-[0.25em] text-[var(--gold)]">Contents</p>
           <h2 className="mt-2 font-display text-3xl font-bold">Table of Contents</h2>
           <ol className="mt-6 divide-y divide-rule">
@@ -88,16 +94,16 @@ export function DocumentPreview({
           const quoteCallouts = sec.callouts?.filter((c) => c.type === "quote") ?? [];
 
           return (
-            <section key={i} className="border-t border-rule">
+            <section key={i} className="border-t border-rule" data-pdf-break="before">
               {/* Chapter opener */}
-              <div className="-mx-8 sm:-mx-14">
+              <div className="-mx-8 sm:-mx-14" data-pdf-keep>
                 {sec.image ? (
-                  <img src={sec.image} alt="" className="h-64 w-full object-cover sm:h-96" />
+                  <img src={sec.image} alt="" className="h-64 w-full object-cover sm:h-96" crossOrigin="anonymous" />
                 ) : (
                   <div className="h-32 w-full bg-gradient-to-br from-ink/90 to-[var(--gold)]/30" />
                 )}
               </div>
-              <div className="relative pt-8">
+              <div className="relative pt-8" data-pdf-keep>
                 <p className="text-[10px] uppercase tracking-[0.3em] text-[var(--gold)]">Chapter {num}</p>
                 <div
                   aria-hidden
@@ -129,7 +135,7 @@ export function DocumentPreview({
               {nonQuoteCallouts.map((c, k) => {
                 const cs = calloutClasses[c.type] ?? calloutClasses.definition;
                 return (
-                  <aside key={k} className={`my-5 px-5 py-4 ${cs.wrap}`}>
+                  <aside key={k} className={`my-5 px-5 py-4 ${cs.wrap}`} data-pdf-keep>
                     <p className={`text-[10px] font-bold uppercase tracking-[0.2em] ${cs.label}`}>{cs.name}</p>
                     {c.title ? <p className="mt-1 font-display text-lg font-semibold">{c.title}</p> : null}
                     <p className="mt-1 text-sm leading-relaxed">{c.body}</p>
@@ -141,6 +147,8 @@ export function DocumentPreview({
               {quoteCallouts.map((q, k) => (
                 <blockquote
                   key={`q-${k}`}
+                  data-pdf-keep
+                  data-pdf-break="before"
                   className="-mx-8 my-10 flex flex-col items-center bg-ink px-8 py-16 text-center text-paper sm:-mx-14 sm:px-14 sm:py-24"
                 >
                   <div className="font-serif text-7xl leading-none text-[var(--gold)] sm:text-8xl">“</div>
@@ -156,15 +164,15 @@ export function DocumentPreview({
 
               {/* Visual timeline */}
               {sec.timeline && sec.timeline.length > 0 ? (
-                <div className="my-8">
+                <div className="my-8" data-pdf-keep>
                   <h3 className="font-display text-xl font-bold">Timeline</h3>
                   <div className="relative mt-6 pl-10">
                     <div className="absolute left-3 top-2 bottom-2 w-0.5 bg-[var(--gold)]" />
                     <ol className="space-y-5">
                       {sec.timeline.map((t, k) => (
-                        <li key={k} className="relative">
+                        <li key={k} className="relative" data-pdf-keep>
                           <span className="absolute -left-[34px] top-1 h-4 w-4 rounded-full border-2 border-[var(--gold)] bg-paper" />
-                          <div className="border-l-4 border-[var(--gold)] bg-secondary p-4 transition-transform hover:translate-x-1">
+                          <div className="border-l-4 border-[var(--gold)] bg-secondary p-4">
                             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--gold)]">{t.date}</p>
                             <p className="mt-1 font-display text-lg font-semibold">{t.title}</p>
                             {t.description ? <p className="mt-1 text-sm text-muted-foreground">{t.description}</p> : null}
@@ -178,7 +186,7 @@ export function DocumentPreview({
 
               {/* Polished comparison table */}
               {sec.table ? (
-                <div className="my-8 overflow-x-auto">
+                <div className="my-8 overflow-x-auto" data-pdf-keep>
                   <h3 className="font-display text-xl font-bold">{sec.table.caption ?? "Comparison"}</h3>
                   <div className="mt-3 overflow-hidden rounded-sm border border-rule">
                     <table className="w-full text-sm">
@@ -211,7 +219,7 @@ export function DocumentPreview({
               ) : null}
 
               {sec.takeaways && sec.takeaways.length > 0 ? (
-                <div className="my-8 border border-[var(--gold)] p-5">
+                <div className="my-8 border border-[var(--gold)] p-5" data-pdf-keep>
                   <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--gold)]">Key Takeaways</p>
                   <ul className="mt-3 space-y-2">
                     {sec.takeaways.map((t, k) => (
@@ -230,14 +238,14 @@ export function DocumentPreview({
         })}
 
         {/* Final */}
-        <section className="border-t border-rule py-12">
+        <section className="border-t border-rule py-12" data-pdf-break="before" data-pdf-keep>
           <p className="text-[10px] uppercase tracking-[0.25em] text-[var(--gold)]">Conclusion</p>
           <h2 className="mt-2 font-display text-3xl font-bold">Final Summary</h2>
           <hr className="my-6 border-rule" />
           <p className="leading-relaxed">{doc.finalSummary}</p>
 
           {doc.references && doc.references.length > 0 ? (
-            <div className="mt-10">
+            <div className="mt-10" data-pdf-keep>
               <p className="text-[10px] uppercase tracking-[0.25em] text-[var(--gold)]">References</p>
               <h3 className="mt-2 font-display text-2xl font-bold">Sources & Further Reading</h3>
               <ol className="mt-4 space-y-2 text-sm text-muted-foreground">
