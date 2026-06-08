@@ -15,10 +15,10 @@ function pickPullQuote(sec: {
 }
 
 const calloutClasses: Record<string, { wrap: string; label: string; name: string }> = {
-  important: { wrap: "border-l-4 border-[var(--crimson)] bg-[oklch(0.96_0.04_25)]/40", label: "text-[var(--crimson)]", name: "Important" },
-  historical: { wrap: "border-l-4 border-[var(--gold)] bg-[oklch(0.96_0.04_75)]/40", label: "text-[var(--gold)]", name: "Historical Context" },
-  insight: { wrap: "border-l-4 border-[var(--sage)] bg-[oklch(0.96_0.03_160)]/40", label: "text-[var(--sage)]", name: "Key Insight" },
-  warning: { wrap: "border-l-4 border-[var(--crimson)] bg-[oklch(0.96_0.04_25)]/40", label: "text-[var(--crimson)]", name: "Warning" },
+  important: { wrap: "border-l-4 border-[var(--crimson)] bg-[#fbeaea]", label: "text-[var(--crimson)]", name: "Important" },
+  historical: { wrap: "border-l-4 border-[var(--gold)] bg-[#fbf1de]", label: "text-[var(--gold)]", name: "Historical Context" },
+  insight: { wrap: "border-l-4 border-[var(--sage)] bg-[#eaf3ee]", label: "text-[var(--sage)]", name: "Key Insight" },
+  warning: { wrap: "border-l-4 border-[var(--crimson)] bg-[#fbeaea]", label: "text-[var(--crimson)]", name: "Warning" },
   definition: { wrap: "border-l-4 border-ink bg-secondary", label: "text-ink", name: "Definition" },
   quote: { wrap: "", label: "", name: "Quote" },
 };

@@ -129,15 +129,64 @@
   .border-rule { border-color: var(--rule); }
 }
 
-/* PDF export off-screen rendering host */
+/* PDF export off-screen rendering host.
+   html2canvas does NOT understand oklch(); override every design token
+   used inside the export tree with sRGB equivalents so rasterization works. */
 .pdf-export-host {
   position: fixed;
   top: 0;
   left: -10000px;
   width: 794px; /* A4 width at 96dpi */
   background: #ffffff;
-  color: #1a1a1a;
+  color: #1f2433;
   z-index: -1;
+
+  --paper: #fbf9f4;
+  --ink: #1f2433;
+  --rule: #e0dccf;
+  --gold: #b8893f;
+  --sage: #6b8a78;
+  --crimson: #a83232;
+
+  --background: #fbf9f4;
+  --foreground: #1f2433;
+  --card: #ffffff;
+  --card-foreground: #1f2433;
+  --popover: #ffffff;
+  --popover-foreground: #1f2433;
+  --primary: #1f2433;
+  --primary-foreground: #fbf9f4;
+  --secondary: #f1ede2;
+  --secondary-foreground: #1f2433;
+  --muted: #f1ede2;
+  --muted-foreground: #5a5f6e;
+  --accent: #b8893f;
+  --accent-foreground: #1f2433;
+  --destructive: #a83232;
+  --destructive-foreground: #fbf9f4;
+  --border: #e0dccf;
+  --input: #e0dccf;
+  --ring: #b8893f;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-ink: var(--ink);
+  --color-paper: var(--paper);
+  --color-rule: var(--rule);
+  --color-gold: var(--gold);
+  --color-sage: var(--sage);
+  --color-crimson: var(--crimson);
 }
 .pdf-export [data-pdf-keep] {
   break-inside: avoid;
