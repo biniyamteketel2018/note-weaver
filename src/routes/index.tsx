@@ -1,17 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useRef, useState } from "react";
-import { pdf } from "@react-pdf/renderer";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { DocumentPreview } from "@/components/DocumentPreview";
-import { PdfDocument } from "@/components/PdfDocument";
 import { analyzeNotes, type StructuredDocument } from "@/lib/analyze.functions";
-import { PALETTES, DEFAULT_PALETTE, type Palette } from "@/lib/palettes";
+import { exportPreviewToPdf } from "@/lib/export-pdf";
 
-import { FileText, Sparkles, Download, Upload, Loader2, FileDown, Check } from "lucide-react";
+import { FileText, Sparkles, Download, Upload, Loader2, FileDown } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({

@@ -128,3 +128,29 @@
   .bg-paper { background-color: var(--paper); }
   .border-rule { border-color: var(--rule); }
 }
+
+/* PDF export off-screen rendering host */
+.pdf-export-host {
+  position: fixed;
+  top: 0;
+  left: -10000px;
+  width: 794px; /* A4 width at 96dpi */
+  background: #ffffff;
+  color: #1a1a1a;
+  z-index: -1;
+}
+.pdf-export [data-pdf-keep] {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+.pdf-export [data-pdf-break="before"] {
+  break-before: page;
+  page-break-before: always;
+}
+.pdf-export img {
+  max-width: 100%;
+  height: auto;
+}
+.pdf-export {
+  font-family: var(--font-sans);
+}
