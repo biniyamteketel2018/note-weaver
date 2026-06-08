@@ -43,7 +43,6 @@ function Index() {
   const [notes, setNotes] = useState("");
   const [doc, setDoc] = useState<StructuredDocument | null>(null);
   const [coverImage, setCoverImage] = useState<string | null>(null);
-  const [palette, setPalette] = useState<Palette>(DEFAULT_PALETTE);
   const [status, setStatus] = useState<"idle" | "analyzing" | "exporting">("idle");
   const fileInput = useRef<HTMLInputElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
@@ -83,20 +82,15 @@ function Index() {
     }
     setStatus("exporting");
     try {
-      const blob = await pdf(<PdfDocument doc={doc} coverImage={coverImage} palette={palette} />).toBlob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${doc.title.replace(/[^a-z0-9]+/gi, "-").toLowerCase().slice(0, 60)}.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
+      const filename = `${doc.title.replace(/[^a-z0-9]+/gi, "-").toLowerCase().slice(0, 60)}.pdf`;
+      await exportPreviewToPdf({ doc, coverImage, filename });
       toast.success("PDF downloaded");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "PDF export failed");
     } finally {
       setStatus("idle");
     }
-  }, [doc, coverImage, palette]);
+  }, [doc, coverImage]);
 
   const busy = status !== "idle";
 
