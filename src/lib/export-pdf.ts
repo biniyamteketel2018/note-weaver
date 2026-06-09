@@ -193,19 +193,26 @@ const COMPLEX_PROPS = ["background", "background-image", "box-shadow", "border-i
 function sanitizeColors(root: HTMLElement) {
   const all: HTMLElement[] = [root, ...Array.from(root.querySelectorAll<HTMLElement>("*"))];
   for (const el of all) {
+    el.style.colorScheme = "light";
     const cs = getComputedStyle(el);
     for (const prop of COLOR_PROPS) {
       const v = cs.getPropertyValue(prop);
       if (!v) continue;
-      if (/lab\(|lch\(|oklab\(|oklch\(|color\(/i.test(v)) {
-        el.style.setProperty(prop, convertColor(v));
+      if (UNSUPPORTED_COLOR_RE.test(v)) {
+        el.style.setProperty(prop, sanitizeColorString(v, root.ownerDocument, prop === "background-color" ? "transparent" : "#1f2433"), "important");
       }
     }
     for (const prop of COMPLEX_PROPS) {
       const v = cs.getPropertyValue(prop);
       if (!v) continue;
-      if (/lab\(|lch\(|oklab\(|oklch\(|color\(/i.test(v)) {
-        el.style.setProperty(prop, sanitizeColorString(v));
+      if (UNSUPPORTED_COLOR_RE.test(v) || /\bin\s+(oklab|lab)\b/i.test(v)) {
+        if (prop === "background" || prop === "background-image") {
+          el.style.setProperty("background-image", "none", "important");
+          const bg = sanitizeColorString(cs.backgroundColor, root.ownerDocument, "transparent");
+          el.style.setProperty("background-color", bg, "important");
+        } else {
+          el.style.setProperty(prop, sanitizeColorString(v, root.ownerDocument, "none"), "important");
+        }
       }
     }
   }
@@ -267,9 +274,10 @@ export async function exportPreviewToPdf(opts: {
   coverImage?: string | null;
   filename: string;
 }) {
-  const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+  const [{ default: html2canvas }, { jsPDF }, { createRoot }] = await Promise.all([
     import("html2canvas"),
     import("jspdf"),
+    import("react-dom/client"),
   ]);
 
   const host = document.createElement("div");
