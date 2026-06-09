@@ -269,6 +269,28 @@ function preparePageBreaks(article: HTMLElement) {
   }
 }
 
+function forceSafePageColors(doc: Document) {
+  const previous = {
+    htmlBackground: doc.documentElement.style.backgroundColor,
+    htmlColor: doc.documentElement.style.color,
+    bodyBackground: doc.body.style.backgroundColor,
+    bodyColor: doc.body.style.color,
+    bodyColorScheme: doc.body.style.colorScheme,
+  };
+  doc.documentElement.style.backgroundColor = "#ffffff";
+  doc.documentElement.style.color = "#1f2433";
+  doc.body.style.backgroundColor = "#ffffff";
+  doc.body.style.color = "#1f2433";
+  doc.body.style.colorScheme = "light";
+  return () => {
+    doc.documentElement.style.backgroundColor = previous.htmlBackground;
+    doc.documentElement.style.color = previous.htmlColor;
+    doc.body.style.backgroundColor = previous.bodyBackground;
+    doc.body.style.color = previous.bodyColor;
+    doc.body.style.colorScheme = previous.bodyColorScheme;
+  };
+}
+
 export async function exportPreviewToPdf(opts: {
   doc: StructuredDocument;
   coverImage?: string | null;
@@ -298,6 +320,8 @@ export async function exportPreviewToPdf(opts: {
       forExport: true,
     }),
   );
+
+  const restorePageColors = forceSafePageColors(document);
 
   try {
     await nextPaint();
@@ -346,6 +370,10 @@ export async function exportPreviewToPdf(opts: {
         scrollY: 0,
         logging: false,
         imageTimeout: 20000,
+        onclone: (clonedDoc, clonedElement) => {
+          forceSafePageColors(clonedDoc);
+          sanitizeColors(clonedElement as HTMLElement);
+        },
       });
 
       if (pageIndex > 0) pdf.addPage();
@@ -355,6 +383,7 @@ export async function exportPreviewToPdf(opts: {
 
     pdf.save(opts.filename);
   } finally {
+    restorePageColors();
     root.unmount();
     host.remove();
   }
