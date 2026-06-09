@@ -215,7 +215,13 @@ const COLOR_PROPS = [
   "column-rule-color",
 ];
 
-const COMPLEX_PROPS = ["background", "background-image", "box-shadow", "border-image-source", "text-shadow"];
+const COMPLEX_PROPS = [
+  "background",
+  "background-image",
+  "box-shadow",
+  "border-image-source",
+  "text-shadow",
+];
 
 function sanitizeColors(root: HTMLElement) {
   const all: HTMLElement[] = [root, ...Array.from(root.querySelectorAll<HTMLElement>("*"))];
@@ -226,7 +232,15 @@ function sanitizeColors(root: HTMLElement) {
       const v = cs.getPropertyValue(prop);
       if (!v) continue;
       if (UNSUPPORTED_COLOR_RE.test(v)) {
-        el.style.setProperty(prop, sanitizeColorString(v, root.ownerDocument, prop === "background-color" ? "transparent" : "#1f2433"), "important");
+        el.style.setProperty(
+          prop,
+          sanitizeColorString(
+            v,
+            root.ownerDocument,
+            prop === "background-color" ? "transparent" : "#1f2433",
+          ),
+          "important",
+        );
       }
     }
     for (const prop of COMPLEX_PROPS) {
@@ -238,7 +252,11 @@ function sanitizeColors(root: HTMLElement) {
           const bg = sanitizeColorString(cs.backgroundColor, root.ownerDocument, "transparent");
           el.style.setProperty("background-color", bg, "important");
         } else {
-          el.style.setProperty(prop, sanitizeColorString(v, root.ownerDocument, "none"), "important");
+          el.style.setProperty(
+            prop,
+            sanitizeColorString(v, root.ownerDocument, "none"),
+            "important",
+          );
         }
       }
     }
