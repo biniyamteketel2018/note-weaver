@@ -1,4 +1,3 @@
-import { createRoot } from "react-dom/client";
 import { createElement } from "react";
 import { DocumentPreview } from "@/components/DocumentPreview";
 import type { StructuredDocument } from "@/lib/analyze.functions";
@@ -47,33 +46,131 @@ function addSpacerBefore(element: HTMLElement, height: number) {
   element.parentElement?.insertBefore(spacer, element);
 }
 
-// ---- Color sanitization (html2canvas can't parse lab()/oklch()/color()) ----
-const colorConvertCanvas = document.createElement("canvas");
-const colorConvertCtx = colorConvertCanvas.getContext("2d")!;
+// ---- Color sanitization (html2canvas can't parse lab()/oklch()/color-mix()) ----
 const colorCache = new Map<string, string>();
+const UNSUPPORTED_COLOR_RE = /\b(lab|lch|oklab|oklch|color|color-mix)\(/i;
+const SIMPLE_COLOR_FN_RE = /\b(lab|lch|oklab|oklch|color)\(([^()]*)\)/gi;
 
-function convertColor(value: string): string {
-  const cached = colorCache.get(value);
-  if (cached) return cached;
+function clamp(n: number, min = 0, max = 1) {
+  return Math.min(max, Math.max(min, n));
+}
+
+function rgbString(r: number, g: number, b: number, a = 1) {
+  const rr = Math.round(clamp(r) * 255);
+  const gg = Math.round(clamp(g) * 255);
+  const bb = Math.round(clamp(b) * 255);
+  return a < 1 ? `rgba(${rr}, ${gg}, ${bb}, ${clamp(a)})` : `rgb(${rr}, ${gg}, ${bb})`;
+}
+
+function parseAlpha(token?: string) {
+  if (!token) return 1;
+  return token.endsWith("%") ? clamp(Number.parseFloat(token) / 100) : clamp(Number.parseFloat(token));
+}
+
+function parseHue(token = "0") {
+  const n = Number.parseFloat(token);
+  if (token.endsWith("turn")) return n * 360;
+  if (token.endsWith("rad")) return (n * 180) / Math.PI;
+  if (token.endsWith("grad")) return n * 0.9;
+  return n;
+}
+
+function colorParts(body: string) {
+  return body.replace(/,/g, " ").replace(/\s*\/\s*/g, " / ").trim().split(/\s+/).filter(Boolean);
+}
+
+function linearToSrgb(v: number) {
+  return v <= 0.0031308 ? 12.92 * v : 1.055 * Math.pow(v, 1 / 2.4) - 0.055;
+}
+
+function xyzD50ToSrgb(x: number, y: number, z: number, alpha = 1) {
+  const d65x = 0.9555766 * x - 0.0230393 * y + 0.0631636 * z;
+  const d65y = -0.0282895 * x + 1.0099416 * y + 0.0210077 * z;
+  const d65z = 0.0122982 * x - 0.020483 * y + 1.3299098 * z;
+  const r = linearToSrgb(3.2404542 * d65x - 1.5371385 * d65y - 0.4985314 * d65z);
+  const g = linearToSrgb(-0.969266 * d65x + 1.8760108 * d65y + 0.041556 * d65z);
+  const b = linearToSrgb(0.0556434 * d65x - 0.2040259 * d65y + 1.0572252 * d65z);
+  return rgbString(r, g, b, alpha);
+}
+
+function labToRgb(l: number, a: number, b: number, alpha = 1) {
+  const fy = (l + 16) / 116;
+  const fx = fy + a / 500;
+  const fz = fy - b / 200;
+  const epsilon = 216 / 24389;
+  const kappa = 24389 / 27;
+  const fInv = (t: number) => {
+    const t3 = t ** 3;
+    return t3 > epsilon ? t3 : (116 * t - 16) / kappa;
+  };
+  return xyzD50ToSrgb(0.96422 * fInv(fx), 1 * fInv(fy), 0.82521 * fInv(fz), alpha);
+}
+
+function oklabToRgb(l: number, a: number, b: number, alpha = 1) {
+  const l1 = (l + 0.3963377774 * a + 0.2158037573 * b) ** 3;
+  const m1 = (l - 0.1055613458 * a - 0.0638541728 * b) ** 3;
+  const s1 = (l - 0.0894841775 * a - 1.291485548 * b) ** 3;
+  const r = linearToSrgb(4.0767416621 * l1 - 3.3077115913 * m1 + 0.2309699292 * s1);
+  const g = linearToSrgb(-1.2684380046 * l1 + 2.6097574011 * m1 - 0.3413193965 * s1);
+  const blue = linearToSrgb(-0.0041960863 * l1 - 0.7034186147 * m1 + 1.707614701 * s1);
+  return rgbString(r, g, blue, alpha);
+}
+
+function parseModernColor(fn: string, body: string): string | null {
+  const parts = colorParts(body);
+  const slash = parts.indexOf("/");
+  const values = slash >= 0 ? parts.slice(0, slash) : parts;
+  const alpha = slash >= 0 ? parseAlpha(parts[slash + 1]) : 1;
+  if (fn === "lab" || fn === "lch") {
+    const l = values[0]?.endsWith("%") ? Number.parseFloat(values[0]) : Number.parseFloat(values[0] ?? "0");
+    const c1 = Number.parseFloat(values[1] ?? "0");
+    const c2 = fn === "lch" ? parseHue(values[2]) : Number.parseFloat(values[2] ?? "0");
+    if (![l, c1, c2, alpha].every(Number.isFinite)) return null;
+    if (fn === "lch") return labToRgb(l, c1 * Math.cos((c2 * Math.PI) / 180), c1 * Math.sin((c2 * Math.PI) / 180), alpha);
+    return labToRgb(l, c1, c2, alpha);
+  }
+  if (fn === "oklab" || fn === "oklch") {
+    const l = values[0]?.endsWith("%") ? Number.parseFloat(values[0]) / 100 : Number.parseFloat(values[0] ?? "0");
+    const c1 = Number.parseFloat(values[1] ?? "0");
+    const c2 = fn === "oklch" ? parseHue(values[2]) : Number.parseFloat(values[2] ?? "0");
+    if (![l, c1, c2, alpha].every(Number.isFinite)) return null;
+    if (fn === "oklch") return oklabToRgb(l, c1 * Math.cos((c2 * Math.PI) / 180), c1 * Math.sin((c2 * Math.PI) / 180), alpha);
+    return oklabToRgb(l, c1, c2, alpha);
+  }
+  if (fn === "color") {
+    const nums = values.slice(1).map((v) => Number.parseFloat(v));
+    if (nums.length >= 3 && nums.slice(0, 3).every(Number.isFinite)) return rgbString(nums[0], nums[1], nums[2], alpha);
+  }
+  return null;
+}
+
+function canvasConvert(value: string, doc: Document): string | null {
+  const canvas = doc.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
   try {
-    colorConvertCtx.fillStyle = "#000";
-    colorConvertCtx.fillStyle = value;
-    const out = colorConvertCtx.fillStyle as string;
-    colorCache.set(value, out);
-    return out;
+    ctx.fillStyle = "#000000";
+    ctx.fillStyle = value;
+    const out = String(ctx.fillStyle);
+    return UNSUPPORTED_COLOR_RE.test(out) ? null : out;
   } catch {
-    colorCache.set(value, value);
-    return value;
+    return null;
   }
 }
 
-const UNSUPPORTED_FN_RE = /(lab|lch|oklab|oklch|color)\(\s*[^()]*(?:\([^()]*\)[^()]*)*\)/gi;
-
-function sanitizeColorString(value: string): string {
+function sanitizeColorString(value: string, doc: Document, fallback: string) {
   if (!value) return value;
-  if (!UNSUPPORTED_FN_RE.test(value)) return value;
-  UNSUPPORTED_FN_RE.lastIndex = 0;
-  return value.replace(UNSUPPORTED_FN_RE, (match) => convertColor(match));
+  const cacheKey = `${fallback}|${value}`;
+  const cached = colorCache.get(cacheKey);
+  if (cached) return cached;
+  let output = value.replace(SIMPLE_COLOR_FN_RE, (_match, fn: string, body: string) => {
+    return parseModernColor(fn.toLowerCase(), body) ?? fallback;
+  });
+  if (UNSUPPORTED_COLOR_RE.test(output)) {
+    output = canvasConvert(output, doc) ?? fallback;
+  }
+  colorCache.set(cacheKey, output);
+  return output;
 }
 
 const COLOR_PROPS = [
