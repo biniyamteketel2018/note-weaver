@@ -227,6 +227,7 @@ export async function exportPreviewToPdf(opts: {
       pageHost.appendChild(page);
       await nextPaint();
       await waitForImages(page);
+      sanitizeColors(page);
 
       const canvas = await html2canvas(page, {
         scale: 2,
