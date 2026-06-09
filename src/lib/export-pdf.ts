@@ -101,7 +101,7 @@ export async function exportPreviewToPdf(opts: {
   coverImage?: string | null;
   filename: string;
 }) {
-  const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+  const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
     import("html2canvas"),
     import("jspdf"),
   ]);
