@@ -9,7 +9,9 @@ const EXPORT_WIDTH_PX = 794;
 const EXPORT_HEIGHT_PX = Math.round((EXPORT_WIDTH_PX * A4_HEIGHT_MM) / A4_WIDTH_MM);
 
 function nextPaint() {
-  return new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+  return new Promise<void>((resolve) =>
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+  );
 }
 
 async function waitForFonts() {
