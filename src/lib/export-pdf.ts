@@ -64,7 +64,9 @@ function rgbString(r: number, g: number, b: number, a = 1) {
 
 function parseAlpha(token?: string) {
   if (!token) return 1;
-  return token.endsWith("%") ? clamp(Number.parseFloat(token) / 100) : clamp(Number.parseFloat(token));
+  return token.endsWith("%")
+    ? clamp(Number.parseFloat(token) / 100)
+    : clamp(Number.parseFloat(token));
 }
 
 function parseHue(token = "0") {
@@ -76,7 +78,12 @@ function parseHue(token = "0") {
 }
 
 function colorParts(body: string) {
-  return body.replace(/,/g, " ").replace(/\s*\/\s*/g, " / ").trim().split(/\s+/).filter(Boolean);
+  return body
+    .replace(/,/g, " ")
+    .replace(/\s*\/\s*/g, " / ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
 }
 
 function linearToSrgb(v: number) {
