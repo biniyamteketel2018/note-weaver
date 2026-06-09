@@ -198,8 +198,33 @@
 }
 .pdf-export img {
   max-width: 100%;
-  height: auto;
 }
 .pdf-export {
   font-family: var(--font-sans);
+}
+.pdf-export .from-ink,
+.pdf-export .from-ink\/90 {
+  --tw-gradient-from: #1f2433;
+}
+.pdf-export .to-\[var\(--gold\)\],
+.pdf-export .to-\[var\(--gold\)\]\/30 {
+  --tw-gradient-to: #b8893f;
+}
+.pdf-export .text-\[var\(--gold\)\]\/15 {
+  color: rgba(184, 137, 63, 0.15);
+}
+.pdf-export .bg-secondary\/60 {
+  background-color: rgba(241, 237, 226, 0.6);
+}
+.pdf-page-host {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 794px;
+}
+.pdf-capture-page {
+  position: relative;
+  overflow: hidden;
+  background: #ffffff;
+  color: #1f2433;
 }
