@@ -47,6 +47,73 @@ function addSpacerBefore(element: HTMLElement, height: number) {
   element.parentElement?.insertBefore(spacer, element);
 }
 
+// ---- Color sanitization (html2canvas can't parse lab()/oklch()/color()) ----
+const colorConvertCanvas = document.createElement("canvas");
+const colorConvertCtx = colorConvertCanvas.getContext("2d")!;
+const colorCache = new Map<string, string>();
+
+function convertColor(value: string): string {
+  const cached = colorCache.get(value);
+  if (cached) return cached;
+  try {
+    colorConvertCtx.fillStyle = "#000";
+    colorConvertCtx.fillStyle = value;
+    const out = colorConvertCtx.fillStyle as string;
+    colorCache.set(value, out);
+    return out;
+  } catch {
+    colorCache.set(value, value);
+    return value;
+  }
+}
+
+const UNSUPPORTED_FN_RE = /(lab|lch|oklab|oklch|color)\(\s*[^()]*(?:\([^()]*\)[^()]*)*\)/gi;
+
+function sanitizeColorString(value: string): string {
+  if (!value) return value;
+  if (!UNSUPPORTED_FN_RE.test(value)) return value;
+  UNSUPPORTED_FN_RE.lastIndex = 0;
+  return value.replace(UNSUPPORTED_FN_RE, (match) => convertColor(match));
+}
+
+const COLOR_PROPS = [
+  "color",
+  "background-color",
+  "border-top-color",
+  "border-right-color",
+  "border-bottom-color",
+  "border-left-color",
+  "outline-color",
+  "text-decoration-color",
+  "fill",
+  "stroke",
+  "caret-color",
+  "column-rule-color",
+];
+
+const COMPLEX_PROPS = ["background", "background-image", "box-shadow", "border-image-source", "text-shadow"];
+
+function sanitizeColors(root: HTMLElement) {
+  const all: HTMLElement[] = [root, ...Array.from(root.querySelectorAll<HTMLElement>("*"))];
+  for (const el of all) {
+    const cs = getComputedStyle(el);
+    for (const prop of COLOR_PROPS) {
+      const v = cs.getPropertyValue(prop);
+      if (!v) continue;
+      if (/lab\(|lch\(|oklab\(|oklch\(|color\(/i.test(v)) {
+        el.style.setProperty(prop, convertColor(v));
+      }
+    }
+    for (const prop of COMPLEX_PROPS) {
+      const v = cs.getPropertyValue(prop);
+      if (!v) continue;
+      if (/lab\(|lch\(|oklab\(|oklch\(|color\(/i.test(v)) {
+        el.style.setProperty(prop, sanitizeColorString(v));
+      }
+    }
+  }
+}
+
 function preparePageBreaks(article: HTMLElement) {
   const avoidSelector = [
     "[data-pdf-keep]",
@@ -160,6 +227,7 @@ export async function exportPreviewToPdf(opts: {
       pageHost.appendChild(page);
       await nextPaint();
       await waitForImages(page);
+      sanitizeColors(page);
 
       const canvas = await html2canvas(page, {
         scale: 2,
