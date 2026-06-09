@@ -158,6 +158,8 @@ export async function exportPreviewToPdf(opts: {
       clone.style.boxShadow = "none";
       page.appendChild(clone);
       pageHost.appendChild(page);
+      await nextPaint();
+      await waitForImages(page);
 
       const canvas = await html2canvas(page, {
         scale: 2,
