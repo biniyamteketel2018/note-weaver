@@ -129,24 +129,44 @@ function parseModernColor(fn: string, body: string): string | null {
   const values = slash >= 0 ? parts.slice(0, slash) : parts;
   const alpha = slash >= 0 ? parseAlpha(parts[slash + 1]) : 1;
   if (fn === "lab" || fn === "lch") {
-    const l = values[0]?.endsWith("%") ? Number.parseFloat(values[0]) : Number.parseFloat(values[0] ?? "0");
+    const l = values[0]?.endsWith("%")
+      ? Number.parseFloat(values[0])
+      : Number.parseFloat(values[0] ?? "0");
     const c1 = Number.parseFloat(values[1] ?? "0");
     const c2 = fn === "lch" ? parseHue(values[2]) : Number.parseFloat(values[2] ?? "0");
     if (![l, c1, c2, alpha].every(Number.isFinite)) return null;
-    if (fn === "lch") return labToRgb(l, c1 * Math.cos((c2 * Math.PI) / 180), c1 * Math.sin((c2 * Math.PI) / 180), alpha);
+    if (fn === "lch") {
+      return labToRgb(
+        l,
+        c1 * Math.cos((c2 * Math.PI) / 180),
+        c1 * Math.sin((c2 * Math.PI) / 180),
+        alpha,
+      );
+    }
     return labToRgb(l, c1, c2, alpha);
   }
   if (fn === "oklab" || fn === "oklch") {
-    const l = values[0]?.endsWith("%") ? Number.parseFloat(values[0]) / 100 : Number.parseFloat(values[0] ?? "0");
+    const l = values[0]?.endsWith("%")
+      ? Number.parseFloat(values[0]) / 100
+      : Number.parseFloat(values[0] ?? "0");
     const c1 = Number.parseFloat(values[1] ?? "0");
     const c2 = fn === "oklch" ? parseHue(values[2]) : Number.parseFloat(values[2] ?? "0");
     if (![l, c1, c2, alpha].every(Number.isFinite)) return null;
-    if (fn === "oklch") return oklabToRgb(l, c1 * Math.cos((c2 * Math.PI) / 180), c1 * Math.sin((c2 * Math.PI) / 180), alpha);
+    if (fn === "oklch") {
+      return oklabToRgb(
+        l,
+        c1 * Math.cos((c2 * Math.PI) / 180),
+        c1 * Math.sin((c2 * Math.PI) / 180),
+        alpha,
+      );
+    }
     return oklabToRgb(l, c1, c2, alpha);
   }
   if (fn === "color") {
     const nums = values.slice(1).map((v) => Number.parseFloat(v));
-    if (nums.length >= 3 && nums.slice(0, 3).every(Number.isFinite)) return rgbString(nums[0], nums[1], nums[2], alpha);
+    if (nums.length >= 3 && nums.slice(0, 3).every(Number.isFinite)) {
+      return rgbString(nums[0], nums[1], nums[2], alpha);
+    }
   }
   return null;
 }
