@@ -94,7 +94,7 @@ export function DocumentPreview({
           const quoteCallouts = sec.callouts?.filter((c) => c.type === "quote") ?? [];
 
           return (
-            <section key={i} className="border-t border-rule" data-pdf-break="before">
+            <section key={i} className="border-t border-rule">
               {/* Chapter opener */}
               <div className="-mx-8 sm:-mx-14" data-pdf-keep>
                 {sec.image ? (
