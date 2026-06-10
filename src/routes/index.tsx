@@ -44,8 +44,16 @@ function Index() {
   const [doc, setDoc] = useState<StructuredDocument | null>(null);
   const [coverImage, setCoverImage] = useState<string | null>(null);
   const [status, setStatus] = useState<"idle" | "analyzing" | "exporting">("idle");
+  const [copied, setCopied] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
+
+  const copyPrompt = useCallback(async () => {
+    await navigator.clipboard.writeText(HOW_TO_USE_PROMPT);
+    setCopied(true);
+    toast.success("Prompt copied to clipboard");
+    setTimeout(() => setCopied(false), 2500);
+  }, []);
 
   const onUpload = useCallback(async (f: File) => {
     const text = await f.text();
