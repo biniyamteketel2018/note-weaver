@@ -237,7 +237,7 @@ export function DocumentPreview({
         })}
 
         {/* Final */}
-        <section className="border-t border-rule py-12" data-pdf-break="before" data-pdf-keep>
+        <section className="border-t border-rule py-12" data-pdf-keep>
           <p className="text-[10px] uppercase tracking-[0.25em] text-[var(--gold)]">Conclusion</p>
           <h2 className="mt-2 font-display text-3xl font-bold">Final Summary</h2>
           <hr className="my-6 border-rule" />
