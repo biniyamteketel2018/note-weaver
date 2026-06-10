@@ -2,204 +2,132 @@ import { createElement } from "react";
 import { DocumentPreview } from "@/components/DocumentPreview";
 import type { StructuredDocument } from "@/lib/analyze.functions";
 
-const A4_WIDTH_MM = 210;
-const A4_HEIGHT_MM = 297;
-const EXPORT_WIDTH_PX = 794;
-const EXPORT_HEIGHT_PX = Math.round((EXPORT_WIDTH_PX * A4_HEIGHT_MM) / A4_WIDTH_MM);
+const A4_W_MM = 210;
+const A4_H_MM = 297;
+const EXPORT_W = 794; // A4 width @ 96dpi
+const EXPORT_H = Math.round((EXPORT_W * A4_H_MM) / A4_W_MM); // ~1123
 
 function nextPaint() {
-  return new Promise<void>((resolve) =>
-    requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
-  );
+  return new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
 }
 
 async function waitForFonts() {
-  if ("fonts" in document) {
-    await document.fonts.ready;
-  }
+  if ("fonts" in document) await (document as any).fonts.ready;
 }
 
-async function waitForImages(container: HTMLElement) {
-  const imgs = Array.from(container.querySelectorAll("img"));
+async function waitForImages(root: HTMLElement) {
+  const imgs = Array.from(root.querySelectorAll("img"));
   await Promise.all(
     imgs.map(async (img) => {
       if (!img.complete) {
-        await new Promise<void>((resolve) => {
-          img.addEventListener("load", () => resolve(), { once: true });
-          img.addEventListener("error", () => resolve(), { once: true });
+        await new Promise<void>((res) => {
+          img.addEventListener("load", () => res(), { once: true });
+          img.addEventListener("error", () => res(), { once: true });
         });
       }
-      if (img.decode) {
-        await img.decode().catch(() => undefined);
-      }
+      try {
+        await img.decode?.();
+      } catch {}
     }),
   );
 }
 
-function addSpacerBefore(element: HTMLElement, height: number) {
-  if (height < 4) return;
-  const spacer = document.createElement("div");
-  spacer.setAttribute("data-pdf-spacer", "true");
-  spacer.style.height = `${Math.ceil(height)}px`;
-  spacer.style.breakInside = "avoid";
-  spacer.style.pageBreakInside = "avoid";
-  element.parentElement?.insertBefore(spacer, element);
+// ---------- color sanitization (html2canvas can't parse oklch/lab/color-mix) ----------
+const UNSUPPORTED = /\b(lab|lch|oklab|oklch|color|color-mix)\(/i;
+const SIMPLE_FN = /\b(lab|lch|oklab|oklch|color)\(([^()]*)\)/gi;
+const cache = new Map<string, string>();
+
+function clamp(n: number, a = 0, b = 1) {
+  return Math.min(b, Math.max(a, n));
 }
-
-// ---- Color sanitization (html2canvas can't parse lab()/oklch()/color-mix()) ----
-const colorCache = new Map<string, string>();
-const UNSUPPORTED_COLOR_RE = /\b(lab|lch|oklab|oklch|color|color-mix)\(/i;
-const SIMPLE_COLOR_FN_RE = /\b(lab|lch|oklab|oklch|color)\(([^()]*)\)/gi;
-
-function clamp(n: number, min = 0, max = 1) {
-  return Math.min(max, Math.max(min, n));
+function rgb(r: number, g: number, b: number, a = 1) {
+  const R = Math.round(clamp(r) * 255);
+  const G = Math.round(clamp(g) * 255);
+  const B = Math.round(clamp(b) * 255);
+  return a < 1 ? `rgba(${R},${G},${B},${clamp(a)})` : `rgb(${R},${G},${B})`;
 }
-
-function rgbString(r: number, g: number, b: number, a = 1) {
-  const rr = Math.round(clamp(r) * 255);
-  const gg = Math.round(clamp(g) * 255);
-  const bb = Math.round(clamp(b) * 255);
-  return a < 1 ? `rgba(${rr}, ${gg}, ${bb}, ${clamp(a)})` : `rgb(${rr}, ${gg}, ${bb})`;
-}
-
-function parseAlpha(token?: string) {
-  if (!token) return 1;
-  return token.endsWith("%")
-    ? clamp(Number.parseFloat(token) / 100)
-    : clamp(Number.parseFloat(token));
-}
-
-function parseHue(token = "0") {
-  const n = Number.parseFloat(token);
-  if (token.endsWith("turn")) return n * 360;
-  if (token.endsWith("rad")) return (n * 180) / Math.PI;
-  if (token.endsWith("grad")) return n * 0.9;
-  return n;
-}
-
-function colorParts(body: string) {
-  return body
-    .replace(/,/g, " ")
-    .replace(/\s*\/\s*/g, " / ")
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
-}
-
-function linearToSrgb(v: number) {
+function lin(v: number) {
   return v <= 0.0031308 ? 12.92 * v : 1.055 * Math.pow(v, 1 / 2.4) - 0.055;
 }
-
-function xyzD50ToSrgb(x: number, y: number, z: number, alpha = 1) {
-  const d65x = 0.9555766 * x - 0.0230393 * y + 0.0631636 * z;
-  const d65y = -0.0282895 * x + 1.0099416 * y + 0.0210077 * z;
-  const d65z = 0.0122982 * x - 0.020483 * y + 1.3299098 * z;
-  const r = linearToSrgb(3.2404542 * d65x - 1.5371385 * d65y - 0.4985314 * d65z);
-  const g = linearToSrgb(-0.969266 * d65x + 1.8760108 * d65y + 0.041556 * d65z);
-  const b = linearToSrgb(0.0556434 * d65x - 0.2040259 * d65y + 1.0572252 * d65z);
-  return rgbString(r, g, b, alpha);
-}
-
-function labToRgb(l: number, a: number, b: number, alpha = 1) {
-  const fy = (l + 16) / 116;
-  const fx = fy + a / 500;
-  const fz = fy - b / 200;
-  const epsilon = 216 / 24389;
-  const kappa = 24389 / 27;
-  const fInv = (t: number) => {
-    const t3 = t ** 3;
-    return t3 > epsilon ? t3 : (116 * t - 16) / kappa;
-  };
-  return xyzD50ToSrgb(0.96422 * fInv(fx), 1 * fInv(fy), 0.82521 * fInv(fz), alpha);
-}
-
 function oklabToRgb(l: number, a: number, b: number, alpha = 1) {
   const l1 = (l + 0.3963377774 * a + 0.2158037573 * b) ** 3;
   const m1 = (l - 0.1055613458 * a - 0.0638541728 * b) ** 3;
   const s1 = (l - 0.0894841775 * a - 1.291485548 * b) ** 3;
-  const r = linearToSrgb(4.0767416621 * l1 - 3.3077115913 * m1 + 0.2309699292 * s1);
-  const g = linearToSrgb(-1.2684380046 * l1 + 2.6097574011 * m1 - 0.3413193965 * s1);
-  const blue = linearToSrgb(-0.0041960863 * l1 - 0.7034186147 * m1 + 1.707614701 * s1);
-  return rgbString(r, g, blue, alpha);
+  return rgb(
+    lin(4.0767416621 * l1 - 3.3077115913 * m1 + 0.2309699292 * s1),
+    lin(-1.2684380046 * l1 + 2.6097574011 * m1 - 0.3413193965 * s1),
+    lin(-0.0041960863 * l1 - 0.7034186147 * m1 + 1.707614701 * s1),
+    alpha,
+  );
 }
-
-function parseModernColor(fn: string, body: string): string | null {
-  const parts = colorParts(body);
-  const slash = parts.indexOf("/");
-  const values = slash >= 0 ? parts.slice(0, slash) : parts;
-  const alpha = slash >= 0 ? parseAlpha(parts[slash + 1]) : 1;
-  if (fn === "lab" || fn === "lch") {
-    const l = values[0]?.endsWith("%")
-      ? Number.parseFloat(values[0])
-      : Number.parseFloat(values[0] ?? "0");
-    const c1 = Number.parseFloat(values[1] ?? "0");
-    const c2 = fn === "lch" ? parseHue(values[2]) : Number.parseFloat(values[2] ?? "0");
-    if (![l, c1, c2, alpha].every(Number.isFinite)) return null;
-    if (fn === "lch") {
-      return labToRgb(
-        l,
-        c1 * Math.cos((c2 * Math.PI) / 180),
-        c1 * Math.sin((c2 * Math.PI) / 180),
-        alpha,
-      );
-    }
-    return labToRgb(l, c1, c2, alpha);
-  }
-  if (fn === "oklab" || fn === "oklch") {
-    const l = values[0]?.endsWith("%")
-      ? Number.parseFloat(values[0]) / 100
-      : Number.parseFloat(values[0] ?? "0");
-    const c1 = Number.parseFloat(values[1] ?? "0");
-    const c2 = fn === "oklch" ? parseHue(values[2]) : Number.parseFloat(values[2] ?? "0");
-    if (![l, c1, c2, alpha].every(Number.isFinite)) return null;
+function xyzToRgb(x: number, y: number, z: number, alpha = 1) {
+  return rgb(
+    lin(3.2404542 * x - 1.5371385 * y - 0.4985314 * z),
+    lin(-0.969266 * x + 1.8760108 * y + 0.041556 * z),
+    lin(0.0556434 * x - 0.2040259 * y + 1.0572252 * z),
+    alpha,
+  );
+}
+function labToRgb(l: number, a: number, b: number, alpha = 1) {
+  const fy = (l + 16) / 116;
+  const fx = fy + a / 500;
+  const fz = fy - b / 200;
+  const e = 216 / 24389;
+  const k = 24389 / 27;
+  const inv = (t: number) => (t ** 3 > e ? t ** 3 : (116 * t - 16) / k);
+  return xyzToRgb(0.96422 * inv(fx), inv(fy), 0.82521 * inv(fz), alpha);
+}
+function parts(s: string) {
+  return s.replace(/,/g, " ").replace(/\s*\/\s*/g, " / ").trim().split(/\s+/).filter(Boolean);
+}
+function parseAlpha(t?: string) {
+  if (!t) return 1;
+  return t.endsWith("%") ? clamp(parseFloat(t) / 100) : clamp(parseFloat(t));
+}
+function parseModern(fn: string, body: string): string | null {
+  const p = parts(body);
+  const si = p.indexOf("/");
+  const vals = si >= 0 ? p.slice(0, si) : p;
+  const a = si >= 0 ? parseAlpha(p[si + 1]) : 1;
+  const num = (s?: string, pct100 = false) => {
+    if (!s) return 0;
+    if (s.endsWith("%")) return pct100 ? parseFloat(s) / 100 : parseFloat(s);
+    return parseFloat(s);
+  };
+  if (fn === "oklch" || fn === "oklab") {
+    const l = num(vals[0], true);
+    const c1 = num(vals[1]);
+    const h = num(vals[2]);
     if (fn === "oklch") {
-      return oklabToRgb(
-        l,
-        c1 * Math.cos((c2 * Math.PI) / 180),
-        c1 * Math.sin((c2 * Math.PI) / 180),
-        alpha,
-      );
+      return oklabToRgb(l, c1 * Math.cos((h * Math.PI) / 180), c1 * Math.sin((h * Math.PI) / 180), a);
     }
-    return oklabToRgb(l, c1, c2, alpha);
+    return oklabToRgb(l, c1, num(vals[2]), a);
+  }
+  if (fn === "lab" || fn === "lch") {
+    const l = num(vals[0]);
+    const c1 = num(vals[1]);
+    const h = num(vals[2]);
+    if (fn === "lch") {
+      return labToRgb(l, c1 * Math.cos((h * Math.PI) / 180), c1 * Math.sin((h * Math.PI) / 180), a);
+    }
+    return labToRgb(l, c1, num(vals[2]), a);
   }
   if (fn === "color") {
-    const nums = values.slice(1).map((v) => Number.parseFloat(v));
-    if (nums.length >= 3 && nums.slice(0, 3).every(Number.isFinite)) {
-      return rgbString(nums[0], nums[1], nums[2], alpha);
-    }
+    const ns = vals.slice(1).map((v) => parseFloat(v));
+    if (ns.length >= 3) return rgb(ns[0], ns[1], ns[2], a);
   }
   return null;
 }
-
-function canvasConvert(value: string, doc: Document): string | null {
-  const canvas = doc.createElement("canvas");
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return null;
-  try {
-    ctx.fillStyle = "#000000";
-    ctx.fillStyle = value;
-    const out = String(ctx.fillStyle);
-    return UNSUPPORTED_COLOR_RE.test(out) ? null : out;
-  } catch {
-    return null;
-  }
+function sanitizeStr(v: string, fallback: string) {
+  if (!v) return v;
+  const key = fallback + "|" + v;
+  const c = cache.get(key);
+  if (c) return c;
+  let out = v.replace(SIMPLE_FN, (_m, fn, body) => parseModern(fn.toLowerCase(), body) ?? fallback);
+  if (UNSUPPORTED.test(out)) out = fallback;
+  cache.set(key, out);
+  return out;
 }
-
-function sanitizeColorString(value: string, doc: Document, fallback: string) {
-  if (!value) return value;
-  const cacheKey = `${fallback}|${value}`;
-  const cached = colorCache.get(cacheKey);
-  if (cached) return cached;
-  let output = value.replace(SIMPLE_COLOR_FN_RE, (_match, fn: string, body: string) => {
-    return parseModernColor(fn.toLowerCase(), body) ?? fallback;
-  });
-  if (UNSUPPORTED_COLOR_RE.test(output)) {
-    output = canvasConvert(output, doc) ?? fallback;
-  }
-  colorCache.set(cacheKey, output);
-  return output;
-}
-
 const COLOR_PROPS = [
   "color",
   "background-color",
@@ -214,126 +142,74 @@ const COLOR_PROPS = [
   "caret-color",
   "column-rule-color",
 ];
-
-const COMPLEX_PROPS = [
-  "background",
-  "background-image",
-  "box-shadow",
-  "border-image-source",
-  "text-shadow",
-];
+const COMPLEX_PROPS = ["background", "background-image", "box-shadow", "text-shadow", "border-image-source"];
 
 function sanitizeColors(root: HTMLElement) {
-  const all: HTMLElement[] = [root, ...Array.from(root.querySelectorAll<HTMLElement>("*"))];
+  const all = [root, ...Array.from(root.querySelectorAll<HTMLElement>("*"))];
   for (const el of all) {
     el.style.colorScheme = "light";
     const cs = getComputedStyle(el);
-    for (const prop of COLOR_PROPS) {
-      const v = cs.getPropertyValue(prop);
-      if (!v) continue;
-      if (UNSUPPORTED_COLOR_RE.test(v)) {
-        el.style.setProperty(
-          prop,
-          sanitizeColorString(
-            v,
-            root.ownerDocument,
-            prop === "background-color" ? "transparent" : "#1f2433",
-          ),
-          "important",
-        );
+    for (const p of COLOR_PROPS) {
+      const v = cs.getPropertyValue(p);
+      if (v && UNSUPPORTED.test(v)) {
+        el.style.setProperty(p, sanitizeStr(v, p === "background-color" ? "transparent" : "#1f2433"), "important");
       }
     }
-    for (const prop of COMPLEX_PROPS) {
-      const v = cs.getPropertyValue(prop);
-      if (!v) continue;
-      if (UNSUPPORTED_COLOR_RE.test(v) || /\bin\s+(oklab|lab)\b/i.test(v)) {
-        if (prop === "background" || prop === "background-image") {
+    for (const p of COMPLEX_PROPS) {
+      const v = cs.getPropertyValue(p);
+      if (v && (UNSUPPORTED.test(v) || /\bin\s+(oklab|lab|oklch|lch)\b/i.test(v))) {
+        if (p === "background" || p === "background-image") {
           el.style.setProperty("background-image", "none", "important");
-          const bg = sanitizeColorString(cs.backgroundColor, root.ownerDocument, "transparent");
-          el.style.setProperty("background-color", bg, "important");
-        } else {
           el.style.setProperty(
-            prop,
-            sanitizeColorString(v, root.ownerDocument, "none"),
+            "background-color",
+            sanitizeStr(cs.backgroundColor, "transparent"),
             "important",
           );
+        } else {
+          el.style.setProperty(p, sanitizeStr(v, "none"), "important");
         }
       }
     }
   }
 }
 
-function preparePageBreaks(article: HTMLElement) {
-  const avoidSelector = [
-    "[data-pdf-keep]",
-    "blockquote",
-    "aside",
-    "figure",
-    "img",
-    "table",
-    "tr",
-    "h1",
-    "h2",
-    "h3",
-    "p",
-    "li",
-  ].join(",");
-
-  const candidates = Array.from(
-    article.querySelectorAll<HTMLElement>(`[data-pdf-break="before"], ${avoidSelector}`),
-  ).filter((element) => {
-    if (element.hasAttribute("data-pdf-spacer")) return false;
-    const closestKeep = element.closest<HTMLElement>("[data-pdf-keep]");
-    return !closestKeep || closestKeep === element;
-  });
-
-  for (const element of candidates) {
-    const articleTop = article.getBoundingClientRect().top;
-    const rect = element.getBoundingClientRect();
-    const top = rect.top - articleTop;
-    const height = rect.height;
-    if (height < 1) continue;
-
-    const pageOffset = ((top % EXPORT_HEIGHT_PX) + EXPORT_HEIGHT_PX) % EXPORT_HEIGHT_PX;
-    const distanceToNextPage = EXPORT_HEIGHT_PX - pageOffset;
-    const isAtPageTop = pageOffset < 2 || distanceToNextPage < 2;
-    const forcedBreak = element.getAttribute("data-pdf-break") === "before";
-
-    if (forcedBreak && top > 2 && !isAtPageTop) {
-      addSpacerBefore(element, distanceToNextPage);
-      continue;
-    }
-
-    const shouldStayTogether = element.matches(avoidSelector);
-    const wouldSplit = pageOffset + height > EXPORT_HEIGHT_PX - 16;
-    const canFitOnFreshPage = height < EXPORT_HEIGHT_PX - 32;
-
-    if (shouldStayTogether && wouldSplit && canFitOnFreshPage && !isAtPageTop) {
-      addSpacerBefore(element, distanceToNextPage);
-    }
-  }
-}
-
 function forceSafePageColors(doc: Document) {
-  const previous = {
-    htmlBackground: doc.documentElement.style.backgroundColor,
-    htmlColor: doc.documentElement.style.color,
-    bodyBackground: doc.body.style.backgroundColor,
-    bodyColor: doc.body.style.color,
-    bodyColorScheme: doc.body.style.colorScheme,
+  const prev = {
+    a: doc.documentElement.style.backgroundColor,
+    b: doc.documentElement.style.color,
+    c: doc.body.style.backgroundColor,
+    d: doc.body.style.color,
   };
   doc.documentElement.style.backgroundColor = "#ffffff";
   doc.documentElement.style.color = "#1f2433";
   doc.body.style.backgroundColor = "#ffffff";
   doc.body.style.color = "#1f2433";
-  doc.body.style.colorScheme = "light";
   return () => {
-    doc.documentElement.style.backgroundColor = previous.htmlBackground;
-    doc.documentElement.style.color = previous.htmlColor;
-    doc.body.style.backgroundColor = previous.bodyBackground;
-    doc.body.style.color = previous.bodyColor;
-    doc.body.style.colorScheme = previous.bodyColorScheme;
+    doc.documentElement.style.backgroundColor = prev.a;
+    doc.documentElement.style.color = prev.b;
+    doc.body.style.backgroundColor = prev.c;
+    doc.body.style.color = prev.d;
   };
+}
+
+// Push elements that would straddle a page boundary down to the next page.
+function nudgeKeepBlocks(article: HTMLElement) {
+  const articleTop = article.getBoundingClientRect().top;
+  const keeps = Array.from(article.querySelectorAll<HTMLElement>("[data-pdf-keep]"));
+  for (const el of keeps) {
+    // Skip nested keeps (only handle outermost)
+    if (el.parentElement?.closest("[data-pdf-keep]")) continue;
+    const rect = el.getBoundingClientRect();
+    const top = rect.top - articleTop;
+    const h = rect.height;
+    if (h < 40 || h > EXPORT_H - 40) continue;
+    const offset = ((top % EXPORT_H) + EXPORT_H) % EXPORT_H;
+    if (offset + h > EXPORT_H - 12 && offset > 12) {
+      const spacer = document.createElement("div");
+      spacer.style.height = `${Math.ceil(EXPORT_H - offset)}px`;
+      el.parentElement?.insertBefore(spacer, el);
+    }
+  }
 }
 
 export async function exportPreviewToPdf(opts: {
@@ -351,10 +227,8 @@ export async function exportPreviewToPdf(opts: {
   host.className = "pdf-export-host";
   const inner = document.createElement("div");
   inner.className = "pdf-export";
-  const pageHost = document.createElement("div");
-  pageHost.className = "pdf-page-host";
+  inner.style.width = `${EXPORT_W}px`;
   host.appendChild(inner);
-  host.appendChild(pageHost);
   document.body.appendChild(host);
 
   const root = createRoot(inner);
@@ -366,7 +240,7 @@ export async function exportPreviewToPdf(opts: {
     }),
   );
 
-  const restorePageColors = forceSafePageColors(document);
+  const restore = forceSafePageColors(document);
 
   try {
     await nextPaint();
@@ -375,60 +249,59 @@ export async function exportPreviewToPdf(opts: {
     await nextPaint();
 
     const article = inner.querySelector<HTMLElement>("article");
-    if (!article) throw new Error("PDF export failed: preview was not rendered.");
+    if (!article) throw new Error("Preview not rendered");
 
-    preparePageBreaks(article);
+    nudgeKeepBlocks(article);
     await nextPaint();
+    sanitizeColors(article);
 
-    const totalHeight = Math.ceil(article.getBoundingClientRect().height);
-    const pageCount = Math.max(1, Math.ceil(totalHeight / EXPORT_HEIGHT_PX));
+    const totalH = Math.ceil(article.getBoundingClientRect().height);
+    // Clamp scale to stay under canvas pixel limits (~16384px height max).
+    const maxScale = Math.max(1, Math.min(2, 15000 / totalH));
+    const scale = maxScale;
+
+    const canvas = await html2canvas(article, {
+      scale,
+      useCORS: true,
+      backgroundColor: "#ffffff",
+      width: EXPORT_W,
+      height: totalH,
+      windowWidth: EXPORT_W,
+      windowHeight: totalH,
+      logging: false,
+      imageTimeout: 20000,
+      onclone: (cdoc, cel) => {
+        forceSafePageColors(cdoc);
+        sanitizeColors(cel as HTMLElement);
+      },
+    });
+
     const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
+    const pagePxH = Math.floor(EXPORT_H * scale);
+    const totalPx = canvas.height;
+    const pageCount = Math.max(1, Math.ceil(totalPx / pagePxH));
 
-    for (let pageIndex = 0; pageIndex < pageCount; pageIndex += 1) {
-      const page = document.createElement("div");
-      page.className = "pdf-capture-page";
-      page.style.width = `${EXPORT_WIDTH_PX}px`;
-      page.style.height = `${EXPORT_HEIGHT_PX}px`;
+    const sliceCanvas = document.createElement("canvas");
+    sliceCanvas.width = canvas.width;
+    sliceCanvas.height = pagePxH;
+    const ctx = sliceCanvas.getContext("2d")!;
 
-      const clone = article.cloneNode(true) as HTMLElement;
-      clone.style.position = "absolute";
-      clone.style.left = "0";
-      clone.style.top = `-${pageIndex * EXPORT_HEIGHT_PX}px`;
-      clone.style.width = `${EXPORT_WIDTH_PX}px`;
-      clone.style.maxWidth = "none";
-      clone.style.boxShadow = "none";
-      page.appendChild(clone);
-      pageHost.appendChild(page);
-      await nextPaint();
-      await waitForImages(page);
-      sanitizeColors(page);
-
-      const canvas = await html2canvas(page, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: "#ffffff",
-        width: EXPORT_WIDTH_PX,
-        height: EXPORT_HEIGHT_PX,
-        windowWidth: EXPORT_WIDTH_PX,
-        windowHeight: EXPORT_HEIGHT_PX,
-        scrollX: 0,
-        scrollY: 0,
-        logging: false,
-        imageTimeout: 20000,
-        onclone: (clonedDoc, clonedElement) => {
-          forceSafePageColors(clonedDoc);
-          sanitizeColors(clonedElement as HTMLElement);
-        },
-      });
-
-      if (pageIndex > 0) pdf.addPage();
-      pdf.addImage(canvas.toDataURL("image/jpeg", 0.95), "JPEG", 0, 0, A4_WIDTH_MM, A4_HEIGHT_MM);
-      page.remove();
+    for (let i = 0; i < pageCount; i++) {
+      const srcY = i * pagePxH;
+      const sliceH = Math.min(pagePxH, totalPx - srcY);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height);
+      ctx.drawImage(canvas, 0, srcY, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
+      const data = sliceCanvas.toDataURL("image/jpeg", 0.9);
+      if (i > 0) pdf.addPage();
+      // Render slice at full A4 width; height proportional to slice
+      const renderH = (sliceH / pagePxH) * A4_H_MM;
+      pdf.addImage(data, "JPEG", 0, 0, A4_W_MM, renderH);
     }
 
     pdf.save(opts.filename);
   } finally {
-    restorePageColors();
+    restore();
     root.unmount();
     host.remove();
   }
