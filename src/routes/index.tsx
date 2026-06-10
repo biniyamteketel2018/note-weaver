@@ -37,6 +37,62 @@ War ended in Europe May 8, 1945 (VE Day) and Pacific Sept 2, 1945 after Hiroshim
 and Nagasaki. Key figures: Churchill, FDR, Stalin, Hitler, Tojo. Outcomes: UN
 formed, Cold War began, decolonization accelerated, ~70-85 million dead.`;
 
+const HOW_TO_USE_PROMPT = `How to Use Notable — Step-by-Step Guide
+
+1. PASTE YOUR NOTES
+Open Notable and paste any raw notes into the large text box. Notes can be messy, unordered, or incomplete — the app is designed to handle everything from lecture scribbles to research snippets to scripture verses.
+
+2. ADD IMAGES (Optional but Recommended)
+You can embed images to appear inside your final PDF. Use any of these formats on their own lines:
+   - (cover: https://example.com/hero.jpg)  → becomes the cover image
+   - (image: https://example.com/figure.jpg) → appears inside a chapter
+   - ![caption](https://example.com/photo.jpg) → standard markdown image
+   - Any bare image URL on its own line       → automatically detected
+
+3. STRUCTURE YOUR CONTENT (Optional)
+Notable auto-detects structure, but you can guide it with simple markdown:
+   - # Title          → document title
+   - ## Heading       → chapter heading
+   - ### Sub-heading  → emphasis inside a chapter
+   - > quote          → becomes a pull-quote or featured blockquote
+   - - bullet point   → becomes key takeaways
+   - 1939: Event      → date : event  format becomes a visual timeline
+   - | A | B |        → pipe-separated tables become comparison tables
+
+4. USE CALLOUT TAGS FOR SPECIAL BOXES
+Add these tags at the start of a line to create styled callout boxes:
+   - [!important]     → highlighted important box
+   - [!insight]       → key insight / tip box
+   - [!warning]       → warning alert box
+   - [!definition]    → definition box
+   - [!historical]    → historical context box
+   - [!quote]         → featured quote block
+
+5. UPLOAD A FILE INSTEAD
+Click "Upload .txt / .md" to load an entire file. Supports .txt, .md, and .markdown files.
+
+6. GENERATE THE DOCUMENT
+Click "Generate Document". The AI will analyze your notes, detect timelines, callouts, headings, tables, and quotes, then build a beautifully structured magazine-quality document with:
+   - Cover page (title, subtitle, category, date)
+   - Executive Summary
+   - Table of Contents
+   - Chapters with hero imagery
+   - Pull quotes and callout boxes
+   - Visual timelines
+   - Comparison tables
+   - Key Takeaways per chapter
+   - Final Summary & References
+
+7. PREVIEW & DOWNLOAD
+Once generated, scroll down to see the live preview. If it looks good, click "Download PDF" to get a print-ready A4 PDF with embedded fonts and images.
+
+8. TIPS FOR BEST RESULTS
+   - Longer notes produce richer documents.
+   - Add explicit dates (e.g., "1941: Pearl Harbor attacked") for automatic timelines.
+   - Use bullet lists for concepts you want turned into "Key Takeaways".
+   - Add a cover image URL at the top for a stunning first page.
+   - Use ## headings to split content into logical chapters.`;
+
 function Index() {
   const analyze = useServerFn(analyzeNotes);
 
