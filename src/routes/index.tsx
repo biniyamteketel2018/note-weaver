@@ -9,7 +9,7 @@ import { DocumentPreview } from "@/components/DocumentPreview";
 import { analyzeNotes, type StructuredDocument } from "@/lib/analyze.functions";
 import { exportPreviewToPdf } from "@/lib/export-pdf";
 
-import { FileText, Sparkles, Download, Upload, Loader2, FileDown } from "lucide-react";
+import { FileText, Sparkles, Download, Upload, Loader2, FileDown, ClipboardCopy, Check, BookOpen, Info } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
