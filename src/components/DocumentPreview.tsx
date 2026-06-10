@@ -62,7 +62,7 @@ export function DocumentPreview({
 
       <div className="px-8 pb-14 sm:px-14">
         {/* Executive Summary */}
-        <section className="py-10" data-pdf-break="before" data-pdf-keep>
+        <section className="py-10" data-pdf-keep>
           <p className="text-[10px] uppercase tracking-[0.25em] text-[var(--gold)]">Executive Summary</p>
           <h2 className="mt-2 font-display text-3xl font-bold">In Brief</h2>
           <p className="mt-4 font-serif text-lg italic leading-relaxed text-muted-foreground">{doc.executiveSummary}</p>
@@ -94,7 +94,7 @@ export function DocumentPreview({
           const quoteCallouts = sec.callouts?.filter((c) => c.type === "quote") ?? [];
 
           return (
-            <section key={i} className="border-t border-rule" data-pdf-break="before">
+            <section key={i} className="border-t border-rule">
               {/* Chapter opener */}
               <div className="-mx-8 sm:-mx-14" data-pdf-keep>
                 {sec.image ? (
@@ -148,7 +148,6 @@ export function DocumentPreview({
                 <blockquote
                   key={`q-${k}`}
                   data-pdf-keep
-                  data-pdf-break="before"
                   className="-mx-8 my-10 flex flex-col items-center bg-ink px-8 py-16 text-center text-paper sm:-mx-14 sm:px-14 sm:py-24"
                 >
                   <div className="font-serif text-7xl leading-none text-[var(--gold)] sm:text-8xl">“</div>
@@ -238,7 +237,7 @@ export function DocumentPreview({
         })}
 
         {/* Final */}
-        <section className="border-t border-rule py-12" data-pdf-break="before" data-pdf-keep>
+        <section className="border-t border-rule py-12" data-pdf-keep>
           <p className="text-[10px] uppercase tracking-[0.25em] text-[var(--gold)]">Conclusion</p>
           <h2 className="mt-2 font-display text-3xl font-bold">Final Summary</h2>
           <hr className="my-6 border-rule" />
