@@ -148,7 +148,6 @@ export function DocumentPreview({
                 <blockquote
                   key={`q-${k}`}
                   data-pdf-keep
-                  data-pdf-break="before"
                   className="-mx-8 my-10 flex flex-col items-center bg-ink px-8 py-16 text-center text-paper sm:-mx-14 sm:px-14 sm:py-24"
                 >
                   <div className="font-serif text-7xl leading-none text-[var(--gold)] sm:text-8xl">“</div>
