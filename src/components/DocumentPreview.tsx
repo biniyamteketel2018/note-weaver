@@ -62,7 +62,7 @@ export function DocumentPreview({
 
       <div className="px-8 pb-14 sm:px-14">
         {/* Executive Summary */}
-        <section className="py-10" data-pdf-break="before" data-pdf-keep>
+        <section className="py-10" data-pdf-keep>
           <p className="text-[10px] uppercase tracking-[0.25em] text-[var(--gold)]">Executive Summary</p>
           <h2 className="mt-2 font-display text-3xl font-bold">In Brief</h2>
           <p className="mt-4 font-serif text-lg italic leading-relaxed text-muted-foreground">{doc.executiveSummary}</p>
